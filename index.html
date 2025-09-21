@@ -4,11 +4,10 @@
   <meta charset="UTF-8">
   <title>Həftə Növbələşməsi</title>
   <script type="module">
-    // 🔥 Установи Firebase через npm: npm install firebase
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-    // 1️⃣ Firebase config
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyAV0tKDzmq1lQvw3Qs5A3MYMJqDLqF3K78",
       authDomain: "hetfe-d6f1b.firebaseapp.com",
@@ -19,12 +18,11 @@
       appId: "1:116144442802:web:3fe30cd8a1f39190be68ab"
     };
 
-    // 2️⃣ Инициализация Firebase
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const weekRef = ref(db, 'weekType');
 
-    // 3️⃣ Форматирование даты
+    // Формат даты
     function formatDateAZ(date) {
       const daysAZ = [
         "bazar günü", "bazar ertəsi", "çərşənbə axşamı",
@@ -41,27 +39,37 @@
       document.getElementById("date").innerText = formatDateAZ(new Date());
     }
 
-    // 4️⃣ Автообновление в полночь
-    function scheduleMidnightUpdate() {
+    // 🔥 Автообновление даты и недели в полночь
+    async function scheduleMidnightUpdate() {
       const now = new Date();
       const tomorrow = new Date(now);
       tomorrow.setHours(24,0,0,0);
       const msToMidnight = tomorrow - now;
-      setTimeout(() => {
+
+      setTimeout(async () => {
         updateDate();
+
+        const today = new Date();
+        if (today.getDay() === 1) { // понедельник
+          const snapshot = await get(weekRef);
+          const current = snapshot.val() || "Üst həftə";
+          const newWeek = current === "Üst həftə" ? "Alt həftə" : "Üst həftə";
+          await set(weekRef, newWeek);
+        }
+
         scheduleMidnightUpdate();
       }, msToMidnight);
     }
 
     scheduleMidnightUpdate();
 
-    // 5️⃣ Автополучение и отображение недели из Firebase
+    // Автоподгрузка данных из Firebase
     onValue(weekRef, (snapshot) => {
       const week = snapshot.val() || "Üst həftə";
       document.getElementById("weekType").innerText = week;
     });
 
-    // 6️⃣ Кнопка переключения недели
+    // Кнопка переключения недели вручную
     window.toggleWeek = async function() {
       const snapshot = await get(weekRef);
       const current = snapshot.val() || "Üst həftə";
@@ -69,7 +77,7 @@
       await set(weekRef, newWeek);
     }
 
-    // 7️⃣ Инициализация при загрузке
+    // Первичная инициализация
     window.addEventListener("DOMContentLoaded", () => {
       updateDate();
     });
