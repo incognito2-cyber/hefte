@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8">
+  <title>Həftə Növbələşməsi</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #6dd5ed, #2193b0);
+      color: white;
+      text-align: center;
+    }
+    .container {
+      background: rgba(0,0,0,0.3);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+    h1 {
+      font-size: 48px;
+      margin: 0;
+    }
+    p {
+      margin-top: 15px;
+      font-size: 20px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      background: #ff9800;
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background: #e68900;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 id="weekType"></h1>
+    <p id="date"></p>
+    <button onclick="toggleWeek()">Dəyiş</button>
+  </div>
+
+  <script>
+    function getWeekTypeAuto() {
+      const startDate = new Date(2025, 0, 6); // Başlanğıc: 6 yanvar 2025 (Üst həftə)
+      const today = new Date();
+      const diffWeeks = Math.floor((today - startDate) / (7 * 24 * 60 * 60 * 1000));
+      return diffWeeks % 2 === 0 ? "Üst həftə" : "Alt həftə";
+    }
+
+    function updateWeek() {
+      let savedWeek = localStorage.getItem("weekType");
+      if (!savedWeek) {
+        savedWeek = getWeekTypeAuto();
+        localStorage.setItem("weekType", savedWeek);
+      }
+      document.getElementById("weekType").innerText = savedWeek;
+    }
+
+    function toggleWeek() {
+      let current = localStorage.getItem("weekType");
+      let newWeek = current === "Üst həftə" ? "Alt həftə" : "Üst həftə";
+      localStorage.setItem("weekType", newWeek);
+      document.getElementById("weekType").innerText = newWeek;
+    }
+
+    // Tarixi formatla (dd.mm.yyyy — gün)
+    function formatDateAZ(date) {
+      const daysAZ = [
+        "bazar günü", "bazar ertəsi", "çərşənbə axşamı",
+        "çərşənbə", "cümə axşamı", "cümə", "şənbə"
+      ];
+      let dd = String(date.getDate()).padStart(2, '0');
+      let mm = String(date.getMonth() + 1).padStart(2, '0');
+      let yyyy = date.getFullYear();
+      let dayName = daysAZ[date.getDay()];
+      return `${dd}.${mm}.${yyyy} — ${dayName}`;
+    }
+
+    function updateDateAndWeek() {
+      document.getElementById("date").innerText = formatDateAZ(new Date());
+      updateWeek();
+    }
+
+    // İlk açılışda göstər
+    updateDateAndWeek();
+
+    // Avtomatik olaraq gecə yarısı yeniləsin
+    function scheduleMidnightUpdate() {
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setHours(24, 0, 0, 0); // növbəti günün 00:00:00
+      const msToMidnight = tomorrow - now;
+
+      setTimeout(() => {
+        updateDateAndWeek();
+        scheduleMidnightUpdate(); // təkrar qur
+      }, msToMidnight);
+    }
+
+    scheduleMidnightUpdate();
+  </script>
+</body>
+</html>
