@@ -3,6 +3,78 @@
 <head>
   <meta charset="UTF-8">
   <title>Həftə Növbələşməsi</title>
+  <script type="module">
+    // 🔥 Установи Firebase через npm: npm install firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+    // 1️⃣ Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyAV0tKDzmq1lQvw3Qs5A3MYMJqDLqF3K78",
+      authDomain: "hetfe-d6f1b.firebaseapp.com",
+      databaseURL: "https://hetfe-d6f1b-default-rtdb.firebaseio.com",
+      projectId: "hetfe-d6f1b",
+      storageBucket: "hetfe-d6f1b.appspot.com",
+      messagingSenderId: "116144442802",
+      appId: "1:116144442802:web:3fe30cd8a1f39190be68ab"
+    };
+
+    // 2️⃣ Инициализация Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const weekRef = ref(db, 'weekType');
+
+    // 3️⃣ Форматирование даты
+    function formatDateAZ(date) {
+      const daysAZ = [
+        "bazar günü", "bazar ertəsi", "çərşənbə axşamı",
+        "çərşənbə", "cümə axşamı", "cümə", "şənbə"
+      ];
+      let dd = String(date.getDate()).padStart(2, '0');
+      let mm = String(date.getMonth() + 1).padStart(2, '0');
+      let yyyy = date.getFullYear();
+      let dayName = daysAZ[date.getDay()];
+      return `${dd}.${mm}.${yyyy} — ${dayName}`;
+    }
+
+    function updateDate() {
+      document.getElementById("date").innerText = formatDateAZ(new Date());
+    }
+
+    // 4️⃣ Автообновление в полночь
+    function scheduleMidnightUpdate() {
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setHours(24,0,0,0);
+      const msToMidnight = tomorrow - now;
+      setTimeout(() => {
+        updateDate();
+        scheduleMidnightUpdate();
+      }, msToMidnight);
+    }
+
+    scheduleMidnightUpdate();
+
+    // 5️⃣ Автополучение и отображение недели из Firebase
+    onValue(weekRef, (snapshot) => {
+      const week = snapshot.val() || "Üst həftə";
+      document.getElementById("weekType").innerText = week;
+    });
+
+    // 6️⃣ Кнопка переключения недели
+    window.toggleWeek = async function() {
+      const snapshot = await get(weekRef);
+      const current = snapshot.val() || "Üst həftə";
+      const newWeek = current === "Üst həftə" ? "Alt həftə" : "Üst həftə";
+      await set(weekRef, newWeek);
+    }
+
+    // 7️⃣ Инициализация при загрузке
+    window.addEventListener("DOMContentLoaded", () => {
+      updateDate();
+    });
+  </script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -47,70 +119,9 @@
 </head>
 <body>
   <div class="container">
-    <h1 id="weekType"></h1>
-    <p id="date"></p>
+    <h1 id="weekType">Üst həftə</h1>
+    <p id="date">21.09.2025 — bazar günü</p>
     <button onclick="toggleWeek()">Dəyiş</button>
   </div>
-
-  <script>
-    function getWeekTypeAuto() {
-      const startDate = new Date(2025, 0, 6); // Başlanğıc: 6 yanvar 2025 (Üst həftə)
-      const today = new Date();
-      const diffWeeks = Math.floor((today - startDate) / (7 * 24 * 60 * 60 * 1000));
-      return diffWeeks % 2 === 0 ? "Üst həftə" : "Alt həftə";
-    }
-
-    function updateWeek() {
-      let savedWeek = localStorage.getItem("weekType");
-      if (!savedWeek) {
-        savedWeek = getWeekTypeAuto();
-        localStorage.setItem("weekType", savedWeek);
-      }
-      document.getElementById("weekType").innerText = savedWeek;
-    }
-
-    function toggleWeek() {
-      let current = localStorage.getItem("weekType");
-      let newWeek = current === "Üst həftə" ? "Alt həftə" : "Üst həftə";
-      localStorage.setItem("weekType", newWeek);
-      document.getElementById("weekType").innerText = newWeek;
-    }
-
-    // Tarixi formatla (dd.mm.yyyy — gün)
-    function formatDateAZ(date) {
-      const daysAZ = [
-        "bazar günü", "bazar ertəsi", "çərşənbə axşamı",
-        "çərşənbə", "cümə axşamı", "cümə", "şənbə"
-      ];
-      let dd = String(date.getDate()).padStart(2, '0');
-      let mm = String(date.getMonth() + 1).padStart(2, '0');
-      let yyyy = date.getFullYear();
-      let dayName = daysAZ[date.getDay()];
-      return `${dd}.${mm}.${yyyy} — ${dayName}`;
-    }
-
-    function updateDateAndWeek() {
-      document.getElementById("date").innerText = formatDateAZ(new Date());
-      updateWeek();
-    }
-
-    // İlk açılışda göstər
-    updateDateAndWeek();
-
-    // Avtomatik olaraq gecə yarısı yeniləsin
-    function scheduleMidnightUpdate() {
-      const now = new Date();
-      const tomorrow = new Date(now);
-      tomorrow.setHours(24, 0, 0, 0); // növbəti günün 00:00:00
-      const msToMidnight = tomorrow - now;
-
-      setTimeout(() => {
-        updateDateAndWeek();
-        scheduleMidnightUpdate(); // təkrar qur
-      }, msToMidnight);
-    }
-
-    scheduleMidnightUpdate();
-  </script>
 </body>
 </html>
