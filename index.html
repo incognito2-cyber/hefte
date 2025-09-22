@@ -39,29 +39,44 @@
       document.getElementById("date").innerText = formatDateAZ(new Date());
     }
 
-    // 🔥 Автообновление даты и недели в полночь
+    // Показываем уведомление о смене недели
+    function showNotification(msg) {
+      const notif = document.getElementById("notification");
+      notif.innerText = msg;
+      notif.style.opacity = "1";
+      setTimeout(() => {
+        notif.style.opacity = "0";
+      }, 3000);
+    }
+
+    // 🔥 Автообновление даты и смена недели в понедельник
     async function scheduleMidnightUpdate() {
       const now = new Date();
-      const tomorrow = new Date(now);
-      tomorrow.setHours(24,0,0,0);
+      const tomorrow = new Date();
+      tomorrow.setHours(0, 0, 0, 0);
+      tomorrow.setDate(tomorrow.getDate() + 1);
       const msToMidnight = tomorrow - now;
 
       setTimeout(async () => {
         updateDate();
 
-        const today = new Date();
-        if (today.getDay() === 1) { // понедельник
-          const snapshot = await get(weekRef);
-          const current = snapshot.val() || "Üst həftə";
-          const newWeek = current === "Üst həftə" ? "Alt həftə" : "Üst həftə";
-          await set(weekRef, newWeek);
+        try {
+          const today = new Date();
+          if (today.getDay() === 1) { // Понедельник
+            const snapshot = await get(weekRef);
+            const current = snapshot.val() || "Üst həftə";
+            const newWeek = current === "Üst həftə" ? "Alt həftə" : "Üst həftə";
+            await set(weekRef, newWeek);
+            showNotification(`Həftə dəyişdi: ${newWeek}`);
+          }
+        } catch (err) {
+          console.error("Ошибка при обновлении недели:", err);
         }
 
+        // Рекурсивно запускаем снова для следующей полуночи
         scheduleMidnightUpdate();
       }, msToMidnight);
     }
-
-    scheduleMidnightUpdate();
 
     // Автоподгрузка данных из Firebase
     onValue(weekRef, (snapshot) => {
@@ -71,16 +86,20 @@
 
     // Кнопка переключения недели вручную
     window.toggleWeek = async function() {
-      const snapshot = await get(weekRef);
-      const current = snapshot.val() || "Üst həftə";
-      const newWeek = current === "Üst həftə" ? "Alt həftə" : "Üst həftə";
-      await set(weekRef, newWeek);
+      try {
+        const snapshot = await get(weekRef);
+        const current = snapshot.val() || "Üst həftə";
+        const newWeek = current === "Üst həftə" ? "Alt həftə" : "Üst həftə";
+        await set(weekRef, newWeek);
+        showNotification(`Həftə dəyişdi: ${newWeek}`);
+      } catch (err) {
+        console.error("Ошибка при смене недели вручную:", err);
+      }
     }
 
     // Первичная инициализация
-    window.addEventListener("DOMContentLoaded", () => {
-      updateDate();
-    });
+    updateDate();
+    scheduleMidnightUpdate();
   </script>
 
   <style>
@@ -100,6 +119,7 @@
       padding: 30px;
       border-radius: 20px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      position: relative;
     }
     h1 {
       font-size: 48px;
@@ -123,10 +143,22 @@
     button:hover {
       background: #e68900;
     }
+    #notification {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.6);
+      padding: 10px 20px;
+      border-radius: 10px;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
   </style>
 </head>
 <body>
   <div class="container">
+    <div id="notification"></div>
     <h1 id="weekType">Üst həftə</h1>
     <p id="date">21.09.2025 — bazar günü</p>
     <button onclick="toggleWeek()">Dəyiş</button>
