@@ -3,105 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Həftə Növbələşməsi</title>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-
-    // Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyAV0tKDzmq1lQvw3Qs5A3MYMJqDLqF3K78",
-      authDomain: "hetfe-d6f1b.firebaseapp.com",
-      databaseURL: "https://hetfe-d6f1b-default-rtdb.firebaseio.com",
-      projectId: "hetfe-d6f1b",
-      storageBucket: "hetfe-d6f1b.appspot.com",
-      messagingSenderId: "116144442802",
-      appId: "1:116144442802:web:3fe30cd8a1f39190be68ab"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const weekRef = ref(db, 'weekType');
-
-    // Формат даты
-    function formatDateAZ(date) {
-      const daysAZ = [
-        "bazar günü", "bazar ertəsi", "çərşənbə axşamı",
-        "çərşənbə", "cümə axşamı", "cümə", "şənbə"
-      ];
-      let dd = String(date.getDate()).padStart(2, '0');
-      let mm = String(date.getMonth() + 1).padStart(2, '0');
-      let yyyy = date.getFullYear();
-      let dayName = daysAZ[date.getDay()];
-      return `${dd}.${mm}.${yyyy} — ${dayName}`;
-    }
-
-    function updateDate() {
-      document.getElementById("date").innerText = formatDateAZ(new Date());
-    }
-
-    // Показываем уведомление о смене недели
-    function showNotification(msg) {
-      const notif = document.getElementById("notification");
-      notif.innerText = msg;
-      notif.style.opacity = "1";
-      setTimeout(() => {
-        notif.style.opacity = "0";
-      }, 3000);
-    }
-
-    // 🔥 Автообновление даты и смена недели в понедельник
-    async function scheduleMidnightUpdate() {
-      const now = new Date();
-      const tomorrow = new Date();
-      tomorrow.setHours(0, 0, 0, 0);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const msToMidnight = tomorrow - now;
-
-      setTimeout(async () => {
-        updateDate();
-
-        try {
-          const today = new Date();
-          if (today.getDay() === 1) { // Понедельник
-            const snapshot = await get(weekRef);
-            const current = snapshot.val() || "Üst həftə";
-            const newWeek = current === "Üst həftə" ? "Alt həftə" : "Üst həftə";
-            await set(weekRef, newWeek);
-            showNotification(`Həftə dəyişdi: ${newWeek}`);
-          }
-        } catch (err) {
-          console.error("Ошибка при обновлении недели:", err);
-        }
-
-        // Рекурсивно запускаем снова для следующей полуночи
-        scheduleMidnightUpdate();
-      }, msToMidnight);
-    }
-
-    // Автоподгрузка данных из Firebase
-    onValue(weekRef, (snapshot) => {
-      const week = snapshot.val() || "Üst həftə";
-      document.getElementById("weekType").innerText = week;
-    });
-
-    // Кнопка переключения недели вручную
-    window.toggleWeek = async function() {
-      try {
-        const snapshot = await get(weekRef);
-        const current = snapshot.val() || "Üst həftə";
-        const newWeek = current === "Üst həftə" ? "Alt həftə" : "Üst həftə";
-        await set(weekRef, newWeek);
-        showNotification(`Həftə dəyişdi: ${newWeek}`);
-      } catch (err) {
-        console.error("Ошибка при смене недели вручную:", err);
-      }
-    }
-
-    // Первичная инициализация
-    updateDate();
-    scheduleMidnightUpdate();
-  </script>
-
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -109,60 +10,48 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
-      margin: 0;
-      background: linear-gradient(135deg, #6dd5ed, #2193b0);
-      color: white;
-      text-align: center;
+      background: #f0f0f0;
     }
     .container {
-      background: rgba(0,0,0,0.3);
-      padding: 30px;
-      border-radius: 20px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-      position: relative;
+      background: white;
+      padding: 20px 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
     }
-    h1 {
-      font-size: 48px;
-      margin: 0;
-    }
-    p {
-      margin-top: 15px;
-      font-size: 20px;
-    }
-    button {
-      margin-top: 20px;
-      padding: 10px 20px;
-      font-size: 18px;
-      border: none;
-      border-radius: 10px;
-      background: #ff9800;
-      color: white;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    button:hover {
-      background: #e68900;
-    }
-    #notification {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.6);
-      padding: 10px 20px;
-      border-radius: 10px;
-      opacity: 0;
-      transition: opacity 0.5s;
+    .week {
+      font-size: 2em;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div id="notification"></div>
-    <h1 id="weekType"></h1>
-    <p id="date">21.09.2025 — bazar günü</p>
-    <button onclick="toggleWeek()">Dəyiş</button>
+    <p>Bu həftə:</p>
+    <div id="weekType" class="week"></div>
   </div>
+
+  <script>
+    // 🔹 Настраиваем "стартовую неделю"
+    // Укажи здесь, какая неделя является UST (например 30 сентября 2025 - ust həftə)
+    const startDate = new Date("2025-09-29T00:00:00"); // понедельник UST həftə
+    const startType = "ust"; // начальная неделя
+
+    function getWeekType(date = new Date()) {
+      // Считаем количество недель с начала
+      const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+      const diff = date.getTime() - startDate.getTime();
+      const weeksPassed = Math.floor(diff / msPerWeek);
+
+      // Чередуем: чётные — ust, нечётные — alt (или наоборот)
+      if (weeksPassed % 2 === 0) {
+        return startType;
+      } else {
+        return startType === "ust" ? "alt" : "ust";
+      }
+    }
+
+    document.getElementById("weekType").textContent = getWeekType();
+  </script>
 </body>
 </html>
-
